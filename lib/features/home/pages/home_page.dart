@@ -17,7 +17,6 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late HomeController _controller;
   late AnimationController _animationController;
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -44,6 +43,9 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Scaffold(
@@ -65,7 +67,7 @@ class _HomePageState extends State<HomePage>
               child: Column(
                 children: [
                   // Profile Header
-                  _buildProfileHeader(dashboard),
+                  _buildProfileHeader(dashboard, isTablet),
 
                   // Main Content
                   Expanded(
@@ -73,8 +75,8 @@ class _HomePageState extends State<HomePage>
                       onRefresh: _onRefresh,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(20),
-                        child: _buildContent(dashboard),
+                        padding: EdgeInsets.all(isTablet ? 32 : 20),
+                        child: _buildContent(dashboard, isTablet),
                       ),
                     ),
                   ),
@@ -83,16 +85,20 @@ class _HomePageState extends State<HomePage>
             );
           },
         ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
     );
   }
 
   // ================= PROFILE HEADER =================
 
-  Widget _buildProfileHeader(dynamic dashboard) {
+  Widget _buildProfileHeader(dynamic dashboard, bool isTablet) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        isTablet ? 32 : 20,
+        isTablet ? 60 : 50,
+        isTablet ? 32 : 20,
+        isTablet ? 32 : 20,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue.shade700, Colors.purple.shade600],
@@ -118,8 +124,8 @@ class _HomePageState extends State<HomePage>
             children: [
               // Avatar
               Container(
-                width: 60,
-                height: 60,
+                width: isTablet ? 80.0 : 60.0,
+                height: isTablet ? 80.0 : 60.0,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 3),
@@ -142,7 +148,7 @@ class _HomePageState extends State<HomePage>
                               ? dashboard.user.name[0].toUpperCase()
                               : 'U',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: isTablet ? 32.0 : 24.0,
                             fontWeight: FontWeight.bold,
                             color: Colors.blue.shade700,
                           ),
@@ -159,17 +165,17 @@ class _HomePageState extends State<HomePage>
                   children: [
                     Text(
                       _getGreeting(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 14,
+                        fontSize: isTablet ? 16.0 : 14.0,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       dashboard.user.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: isTablet ? 24.0 : 20.0,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -231,35 +237,35 @@ class _HomePageState extends State<HomePage>
 
   // ================= MAIN CONTENT =================
 
-  Widget _buildContent(dynamic dashboard) {
+  Widget _buildContent(dynamic dashboard, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Hero Card - Status Absensi
-        _buildHeroCard(dashboard),
-        const SizedBox(height: 24),
+        _buildHeroCard(dashboard, isTablet),
+        SizedBox(height: isTablet ? 32 : 24),
 
         // Quick Actions
-        _sectionTitle('Aksi Cepat'),
-        const SizedBox(height: 12),
-        _buildQuickActions(context),
+        _sectionTitle('Aksi Cepat', isTablet),
+        SizedBox(height: isTablet ? 16 : 12),
+        _buildQuickActions(context, isTablet),
 
-        const SizedBox(height: 28),
-        _sectionTitle('Ringkasan Kelas'),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 36 : 28),
+        _sectionTitle('Ringkasan Kelas', isTablet),
+        SizedBox(height: isTablet ? 16 : 12),
         ClassSummaryCard(
           summary: dashboard.classSummary,
           onTap: () => Navigator.pushNamed(context, '/classes'),
         ),
 
-        const SizedBox(height: 28),
-        _sectionTitle('Statistik Kehadiran'),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 36 : 28),
+        _sectionTitle('Grafik Kehadiran', isTablet),
+        SizedBox(height: isTablet ? 16 : 12),
         AttendanceChart(stats: dashboard.stats),
 
-        const SizedBox(height: 28),
-        _sectionTitle('Notifikasi Terbaru'),
-        const SizedBox(height: 12),
+        SizedBox(height: isTablet ? 36 : 28),
+        _sectionTitle('Notifikasi Terbaru', isTablet),
+        SizedBox(height: isTablet ? 16 : 12),
         NotificationPreview(
           notifications: dashboard.notifications,
           onViewAll: () {},
@@ -270,113 +276,26 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ================= BOTTOM NAVIGATION =================
+  // ================= UI COMPONENTS =================
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-
-            // Navigate based on index
-            switch (index) {
-              case 0:
-                // Already on home
-                break;
-              case 1:
-                Navigator.pushNamed(context, '/classes');
-                break;
-              case 2:
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur absensi akan segera hadir'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                break;
-              case 3:
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur jadwal akan segera hadir'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                break;
-              case 4:
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur profil akan segera hadir'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                break;
-            }
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.blue.shade700,
-          unselectedItemColor: Colors.grey.shade400,
-          selectedFontSize: 12,
-          unselectedFontSize: 11,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school_outlined),
-              activeIcon: Icon(Icons.school),
-              label: 'Kelas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.fingerprint),
-              activeIcon: Icon(Icons.fingerprint),
-              label: 'Absensi',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today_outlined),
-              activeIcon: Icon(Icons.calendar_today),
-              label: 'Jadwal',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
-        ),
+  Widget _sectionTitle(String title, [bool isTablet = false]) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: isTablet ? 20.0 : 18.0,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey.shade800,
       ),
     );
   }
 
-  // ================= UI COMPONENTS =================
-
-  Widget _buildHeroCard(dynamic dashboard) {
+  Widget _buildHeroCard(dynamic dashboard, bool isTablet) {
     final attendance = dashboard.todayAttendance;
     final statusText = attendance?.statusDisplay ?? 'Belum Absen';
     final checkInTime = attendance?.checkInTime ?? '-';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isTablet ? 28.0 : 20.0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue.shade600, Colors.purple.shade500],
@@ -422,14 +341,50 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, bool isTablet) {
     final actions = [
-      _quickAction(Icons.fingerprint, 'Absensi', Colors.blue, () {}),
-      _quickAction(Icons.face, 'Face ID', Colors.purple, () {}),
-      _quickAction(Icons.calendar_today, 'Jadwal', Colors.green, () {}),
-      _quickAction(Icons.history, 'Riwayat', Colors.orange, () {}),
-      _quickAction(Icons.assessment, 'Laporan', Colors.red, () {}),
-      _quickAction(Icons.settings, 'Pengaturan', Colors.grey, () {}),
+      _quickAction(
+        Icons.fingerprint,
+        'Absensi',
+        Colors.blue,
+        () => Navigator.pushNamed(context, '/attendance'),
+      ),
+      _quickAction(
+        Icons.face,
+        'Face ID',
+        Colors.purple,
+        () => Navigator.pushNamed(context, '/attendance/face'),
+      ),
+      _quickAction(Icons.calendar_today, 'Jadwal', Colors.green, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fitur jadwal akan segera hadir'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }),
+      _quickAction(
+        Icons.history,
+        'Riwayat',
+        Colors.orange,
+        () => Navigator.pushNamed(context, '/attendance/history'),
+      ),
+      _quickAction(Icons.assessment, 'Laporan', Colors.red, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fitur laporan akan segera hadir'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }),
+      _quickAction(Icons.settings, 'Pengaturan', Colors.grey, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fitur pengaturan akan segera hadir'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }),
     ];
 
     return SizedBox(
@@ -471,13 +426,6 @@ class _HomePageState extends State<HomePage>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
     );
   }
 

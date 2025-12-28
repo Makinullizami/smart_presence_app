@@ -95,6 +95,32 @@ class ApiService {
     }
   }
 
+  /// Perform PUT request
+  ///
+  /// [url] - The endpoint URL
+  /// [body] - The request body as a Map
+  /// [headers] - Optional additional headers
+  ///
+  /// Returns the response body as a Map
+  /// Throws an exception if the request fails
+  static Future<Map<String, dynamic>> put(
+    String url, {
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: _buildHeaders(additionalHeaders: headers),
+        body: body != null ? jsonEncode(body) : null,
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('PUT request failed: $e');
+    }
+  }
+
   /// Handle HTTP response
   ///
   /// Parses the response and handles different status codes
