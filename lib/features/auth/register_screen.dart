@@ -56,9 +56,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         role: _selectedRole,
       );
 
-      // Registration successful - navigate to home
+      // Registration successful - navigate based on role
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Check selected role and navigate accordingly
+        final roleLower = _selectedRole.toLowerCase();
+        if (roleLower == 'lecturer' ||
+            roleLower == 'dosen' ||
+            roleLower == 'teacher') {
+          // Navigate to lecturer dashboard
+          Navigator.pushReplacementNamed(context, '/lecturer/home');
+        } else {
+          // Navigate to student home
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } catch (e) {
       // Registration failed - show error message

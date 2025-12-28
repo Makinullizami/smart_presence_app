@@ -1,64 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../profile/controllers/profile_controller.dart';
+import '../controllers/lecturer_home_controller.dart';
+import '../models/lecturer_dashboard_model.dart';
 
-import '../controllers/home_controller.dart';
-import '../models/dashboard_model.dart';
-
-/// Modern Student Home Page - Redesigned Dashboard
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+/// Modern Lecturer Home Page - Redesigned Dashboard
+class LecturerHomePage extends StatefulWidget {
+  const LecturerHomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<LecturerHomePage> createState() => _LecturerHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  late HomeController _controller;
+class _LecturerHomePageState extends State<LecturerHomePage> {
+  late LecturerHomeController _controller;
+  late ProfileController _profileController;
 
   @override
   void initState() {
     super.initState();
-    _controller = HomeController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadDashboard();
-    });
+    _controller = LecturerHomeController();
+    _profileController = ProfileController();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await _profileController.loadProfile();
+    await _controller.loadAll();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _profileController.dispose();
     super.dispose();
   }
 
   Future<void> _onRefresh() async {
-    await _controller.loadDashboard();
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Selamat Pagi';
-    if (hour < 15) return 'Selamat Siang';
-    if (hour < 18) return 'Selamat Sore';
-    return 'Selamat Malam';
+    await _controller.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _controller,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _controller),
+        ChangeNotifierProvider.value(value: _profileController),
+      ],
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
-        body: Consumer<HomeController>(
-          builder: (context, controller, _) {
-            if (controller.state == DashboardState.loading) {
+        body: Consumer2<LecturerHomeController, ProfileController>(
+          builder: (context, controller, profileController, _) {
+            if (controller.state == LecturerHomeState.loading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (controller.state == DashboardState.error) {
+            if (controller.state == LecturerHomeState.error) {
               return _buildError(controller);
             }
 
             final dashboard = controller.dashboard;
+            final user = profileController.user;
 
             return RefreshIndicator(
               onRefresh: _onRefresh,
@@ -76,12 +78,12 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 16),
 
                         // Profile Header
-                        _buildProfileHeader(dashboard),
+                        _buildProfileHeader(user?.name ?? 'Dosen'),
 
                         const SizedBox(height: 24),
 
-                        // Today's Attendance Card
-                        _buildTodayAttendanceCard(dashboard),
+                        // Active Session / Progress Card
+                        _buildActiveSessionCard(controller),
 
                         const SizedBox(height: 24),
 
@@ -90,14 +92,14 @@ class _HomePageState extends State<HomePage> {
 
                         const SizedBox(height: 24),
 
-                        // Class Summary Section
-                        _buildClassSummary(dashboard),
+                        // My Classes Section
+                        _buildClassesSection(controller),
 
                         const SizedBox(height: 24),
 
-                        // Attendance Statistics
-                        if (dashboard?.stats != null)
-                          _buildStatisticsCard(dashboard!.stats),
+                        // Statistics Card
+                        if (dashboard?.attendanceStats != null)
+                          _buildStatisticsCard(dashboard!.attendanceStats!),
 
                         const SizedBox(height: 100), // Bottom padding
                       ],
@@ -143,9 +145,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildProfileHeader(DashboardModel? dashboard) {
-    final userName = dashboard?.user.name ?? 'Mahasiswa';
-
+  Widget _buildProfileHeader(String name) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_getGreeting()},',
+                  'Selamat Datang,',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade600,
@@ -180,7 +180,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  userName,
+                  name,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -197,16 +197,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTodayAttendanceCard(DashboardModel? dashboard) {
-    final todayAttendance = dashboard?.todayAttendance;
-    final hasAttendance = todayAttendance != null;
+  Widget _buildActiveSessionCard(LecturerHomeController controller) {
+    final activeClass = controller.classes.firstWhere(
+      (c) => c.hasActiveSession,
+      orElse: () =>
+          LecturerClassModel(id: 0, name: '', code: '', studentCount: 0),
+    );
+
+    final hasActiveSession = activeClass.id > 0 && activeClass.hasActiveSession;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: hasAttendance
+          colors: hasActiveSession
               ? [Colors.green.shade600, Colors.teal.shade500]
               : [Colors.blue.shade700, Colors.purple.shade600],
           begin: Alignment.topLeft,
@@ -215,7 +220,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: (hasAttendance ? Colors.green : Colors.blue).withValues(
+            color: (hasActiveSession ? Colors.green : Colors.blue).withValues(
               alpha: 0.3,
             ),
             blurRadius: 12,
@@ -235,7 +240,7 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  hasAttendance ? Icons.check_circle : Icons.schedule,
+                  hasActiveSession ? Icons.radio_button_checked : Icons.school,
                   color: Colors.white,
                   size: 24,
                 ),
@@ -246,75 +251,73 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      hasAttendance ? 'Absensi Hari Ini' : 'Belum Absen',
+                      hasActiveSession
+                          ? 'Sesi Absensi Aktif'
+                          : 'Tidak Ada Sesi Aktif',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      hasAttendance
-                          ? todayAttendance.statusDisplay
-                          : 'Jangan lupa absen hari ini',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
+                    if (hasActiveSession) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        activeClass.name,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          if (hasAttendance) ...[
+          if (hasActiveSession) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.access_time, color: Colors.white, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    todayAttendance.checkInTime ?? 'Waktu tidak tersedia',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.green.shade700,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Monitor',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/attendance'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.blue.shade700,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.fingerprint, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Absen Sekarang',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Tutup Sesi',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ],
@@ -343,27 +346,26 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.school_outlined,
                 label: 'Kelas Saya',
                 color: Colors.blue.shade600,
-                onTap: () => Navigator.pushNamed(context, '/classes'),
+                onTap: () {},
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
-                icon: Icons.fingerprint,
-                label: 'Absensi',
+                icon: Icons.assessment_outlined,
+                label: 'Laporan',
                 color: Colors.purple.shade600,
-                onTap: () => Navigator.pushNamed(context, '/attendance'),
+                onTap: () {},
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
-                icon: Icons.history,
-                label: 'Riwayat',
+                icon: Icons.bar_chart,
+                label: 'Statistik',
                 color: Colors.green.shade600,
-                onTap: () =>
-                    Navigator.pushNamed(context, '/attendance/history'),
+                onTap: () {},
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
-                icon: Icons.person_outline,
-                label: 'Profile',
+                icon: Icons.settings_outlined,
+                label: 'Pengaturan',
                 color: Colors.grey.shade600,
                 onTap: () => Navigator.pushNamed(context, '/profile'),
               ),
@@ -419,10 +421,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildClassSummary(DashboardModel? dashboard) {
-    final totalClasses = dashboard?.classSummary.totalClasses ?? 0;
-    final present = dashboard?.stats.present ?? 0;
-
+  Widget _buildClassesSection(LecturerHomeController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -432,7 +431,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Ringkasan',
+                'Kelas Saya',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -440,7 +439,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/classes'),
+                onPressed: () {},
                 child: Text(
                   'Lihat Semua',
                   style: TextStyle(
@@ -452,38 +451,21 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  icon: Icons.school,
-                  label: 'Total Kelas',
-                  value: totalClasses.toString(),
-                  color: Colors.blue.shade600,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  icon: Icons.check_circle,
-                  label: 'Kehadiran',
-                  value: present.toString(),
-                  color: Colors.green.shade600,
-                ),
-              ),
-            ],
-          ),
+          if (controller.classes.isEmpty)
+            _buildEmptyState()
+          else
+            ...controller.classes.take(3).map((classModel) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildClassCard(classModel),
+              );
+            }),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildClassCard(LecturerClassModel classModel) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -501,38 +483,151 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.class_outlined,
+                  color: Colors.blue.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      classModel.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            classModel.code,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.people,
+                          size: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${classModel.studentCount} Mahasiswa',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: classModel.hasActiveSession
+                      ? Colors.green.shade50
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  classModel.hasActiveSession ? 'Aktif' : 'Nonaktif',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: classModel.hasActiveSession
+                        ? Colors.green.shade700
+                        : Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue.shade700,
+                    side: BorderSide(color: Colors.blue.shade700),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Detail',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: classModel.hasActiveSession
+                        ? Colors.red.shade600
+                        : Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    classModel.hasActiveSession ? 'Tutup Sesi' : 'Buka Sesi',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsCard(dynamic stats) {
-    final present = stats.present ?? 0;
-    final late = stats.late ?? 0;
-    final absent = stats.absent ?? 0;
-
+  Widget _buildStatisticsCard(AttendanceStatsModel stats) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
@@ -564,17 +659,17 @@ class _HomePageState extends State<HomePage> {
             children: [
               _buildStatItem(
                 'Hadir',
-                present.toString(),
+                stats.present.toString(),
                 Colors.green.shade600,
               ),
               _buildStatItem(
                 'Terlambat',
-                late.toString(),
+                stats.late.toString(),
                 Colors.orange.shade600,
               ),
               _buildStatItem(
                 'Tidak Hadir',
-                absent.toString(),
+                stats.absent.toString(),
                 Colors.red.shade600,
               ),
             ],
@@ -606,7 +701,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildError(HomeController controller) {
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Icon(Icons.school_outlined, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            'Belum Ada Kelas',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Anda belum membuat kelas.\nBuat kelas pertama Anda untuk memulai.',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError(LecturerHomeController controller) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -627,7 +748,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => _controller.loadDashboard(),
+              onPressed: () => _controller.loadAll(),
               icon: const Icon(Icons.refresh),
               label: const Text('Coba Lagi'),
             ),

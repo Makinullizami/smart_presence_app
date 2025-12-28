@@ -4,6 +4,7 @@ import '../core/widgets/main_scaffold.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/classes/pages/class_detail_page.dart';
+import '../features/lecturer/pages/lecturer_home_page.dart';
 import '../features/attendance/pages/attendance_face_page.dart';
 import '../features/attendance/pages/attendance_pin_page.dart';
 import '../features/attendance/pages/attendance_qr_page.dart';
@@ -38,6 +39,10 @@ class AppRoutes {
   static const String profileEdit = '/profile/edit';
   static const String profilePassword = '/profile/password';
 
+  // Lecturer routes
+  static const String lecturerHome = '/lecturer/home';
+  static const String lecturerClassDetail = '/lecturer/class/detail';
+
   /// Get all routes
   /// Note: /home and /classes routes are protected by AuthGuard
   static Map<String, WidgetBuilder> getRoutes() {
@@ -64,6 +69,13 @@ class AppRoutes {
       profile: (context) => const MainScaffold(initialIndex: 3),
       profileEdit: (context) => const EditProfilePage(),
       profilePassword: (context) => const ChangePasswordPage(),
+
+      // Lecturer routes
+      lecturerHome: (context) => const LecturerHomePage(),
+      lecturerClassDetail: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as int?;
+        return ClassDetailPage(classId: args ?? 0);
+      },
     };
   }
 

@@ -41,15 +41,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       // Call AuthService login
-      await AuthService.login(
+      final userData = await AuthService.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       // Login successful
       if (mounted) {
-        // Navigate to home screen
-        Navigator.pushReplacementNamed(context, '/home');
+        // Debug: Print userData to see what backend returns
+        print('DEBUG - User Data: $userData');
+
+        // Check user role and navigate accordingly
+        // Try multiple possible role field names
+        final role =
+            (userData['role'] ??
+                    userData['role_name'] ??
+                    userData['user_role'] ??
+                    '')
+                as String;
+
+        print('DEBUG - User Role: $role');
+
+        // Check if role is lecturer/dosen (case-insensitive)
+        final roleLower = role.toLowerCase();
+        if (roleLower == 'lecturer' ||
+            roleLower == 'dosen' ||
+            roleLower == 'teacher') {
+          // Navigate to lecturer dashboard
+          print('DEBUG - Navigating to lecturer dashboard');
+          Navigator.pushReplacementNamed(context, '/lecturer/home');
+        } else {
+          // Navigate to student home
+          print('DEBUG - Navigating to student dashboard');
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } catch (e) {
       // Login failed - show error message
