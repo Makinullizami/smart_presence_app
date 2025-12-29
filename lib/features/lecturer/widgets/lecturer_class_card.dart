@@ -6,12 +6,14 @@ class LecturerClassCard extends StatelessWidget {
   final LecturerClassModel classModel;
   final VoidCallback onTapDetail;
   final VoidCallback onTapSession;
+  final VoidCallback? onDelete;
 
   const LecturerClassCard({
     super.key,
     required this.classModel,
     required this.onTapDetail,
     required this.onTapSession,
+    this.onDelete,
   });
 
   @override
@@ -70,6 +72,17 @@ class LecturerClassCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: isTablet ? 12.0 : 8.0),
+                if (onDelete != null)
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red.shade600,
+                      size: isTablet ? 24.0 : 20.0,
+                    ),
+                    onPressed: onDelete,
+                    tooltip: 'Hapus Kelas',
+                  ),
+                SizedBox(width: isTablet ? 8.0 : 4.0),
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: isTablet ? 14.0 : 12.0,

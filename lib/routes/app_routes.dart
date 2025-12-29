@@ -4,14 +4,24 @@ import '../core/widgets/main_scaffold.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/classes/pages/class_detail_page.dart';
+import '../features/classes/pages/student_join_class_page.dart';
+import '../features/classes/pages/student_class_list_page.dart';
+import '../features/classes/pages/student_class_detail_page.dart';
 import '../features/lecturer/pages/lecturer_home_page.dart';
+import '../features/lecturer/pages/lecturer_attendance_monitor_page.dart';
+import '../features/lecturer/pages/lecturer_class_list_page.dart';
+import '../features/lecturer/pages/lecturer_create_class_page.dart';
 import '../features/attendance/pages/attendance_face_page.dart';
 import '../features/attendance/pages/attendance_pin_page.dart';
 import '../features/attendance/pages/attendance_qr_page.dart';
 import '../features/attendance/pages/attendance_history_page.dart';
 import '../features/attendance/pages/attendance_success_page.dart';
+import '../features/attendance/pages/attendance_permission_page.dart';
 import '../features/profile/pages/edit_profile_page.dart';
 import '../features/profile/pages/change_password_page.dart';
+import '../features/notification/pages/notification_page.dart';
+import '../features/lecturer/pages/lecturer_stats_page.dart'; // Added
+import '../features/lecturer/pages/lecturer_report_page.dart';
 
 /// Application Routes Configuration
 class AppRoutes {
@@ -25,6 +35,7 @@ class AppRoutes {
   static const String home = '/home';
   static const String classes = '/classes';
   static const String classDetail = '/classes/detail';
+  static const String notifications = '/notifications';
 
   // Attendance routes
   static const String attendance = '/attendance';
@@ -33,6 +44,7 @@ class AppRoutes {
   static const String attendanceQr = '/attendance/qr';
   static const String attendanceHistory = '/attendance/history';
   static const String attendanceSuccess = '/attendance/success';
+  static const String attendancePermission = '/attendance/permission';
 
   // Profile routes
   static const String profile = '/profile';
@@ -41,7 +53,18 @@ class AppRoutes {
 
   // Lecturer routes
   static const String lecturerHome = '/lecturer/home';
+  static const String lecturerClasses = '/lecturer/classes';
+  static const String lecturerCreateClass = '/lecturer/classes/create';
   static const String lecturerClassDetail = '/lecturer/class/detail';
+  static const String lecturerAttendanceMonitor =
+      '/lecturer/attendance/monitor';
+  static const String lecturerReports = '/lecturer/reports';
+  static const String lecturerStats = '/lecturer/stats'; // Added // Added
+
+  // Student class routes
+  static const String studentClasses = '/student/classes';
+  static const String studentJoinClass = '/student/join-class';
+  static const String studentClassDetail = '/student/class/detail';
 
   /// Get all routes
   /// Note: /home and /classes routes are protected by AuthGuard
@@ -64,7 +87,8 @@ class AppRoutes {
       attendanceQr: (context) => const AttendanceQrPage(),
       attendanceHistory: (context) => const AttendanceHistoryPage(),
       attendanceSuccess: (context) => const AttendanceSuccessPage(),
-
+      attendancePermission: (context) =>
+          const AttendancePermissionPage(), // Added
       // Profile routes
       profile: (context) => const MainScaffold(initialIndex: 3),
       profileEdit: (context) => const EditProfilePage(),
@@ -72,10 +96,30 @@ class AppRoutes {
 
       // Lecturer routes
       lecturerHome: (context) => const LecturerHomePage(),
+      lecturerClasses: (context) => const LecturerClassListPage(),
+      lecturerCreateClass: (context) => const LecturerCreateClassPage(),
       lecturerClassDetail: (context) {
         final args = ModalRoute.of(context)?.settings.arguments as int?;
         return ClassDetailPage(classId: args ?? 0);
       },
+      lecturerAttendanceMonitor: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return LecturerAttendanceMonitorPage(
+          sessionId: args?['sessionId'] ?? 0,
+          className: args?['className'] ?? '',
+        );
+      },
+      lecturerReports: (context) => const LecturerReportPage(),
+      lecturerStats: (context) => const LecturerStatsPage(), // Added
+      // Student class routes
+      studentClasses: (context) => const StudentClassListPage(),
+      studentJoinClass: (context) => const StudentJoinClassPage(),
+      studentClassDetail: (context) {
+        final classId = ModalRoute.of(context)!.settings.arguments as int;
+        return StudentClassDetailPage(classId: classId);
+      },
+      notifications: (context) => const NotificationPage(),
     };
   }
 

@@ -127,7 +127,43 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
+          // Class & Session Info (Added)
+          if (attendance.className != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    attendance.className!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                  if (attendance.sessionName != null)
+                    Text(
+                      attendance.sessionName!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade600,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Times
           Row(

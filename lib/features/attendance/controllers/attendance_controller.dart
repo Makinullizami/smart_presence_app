@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/attendance_model.dart';
 import '../services/attendance_service.dart';
+import '../../../core/storage/token_storage.dart';
 
 /// Attendance State
 enum AttendanceState { initial, loading, loaded, error }
@@ -49,9 +50,20 @@ class AttendanceController extends ChangeNotifier {
   Future<bool> checkIn({
     String? location,
     Map<String, dynamic>? additionalData,
+    dynamic attachment, // File or String path
+    String? filename,
   }) async {
     if (_selectedMethod == null) {
       _errorMessage = 'Pilih metode absensi terlebih dahulu';
+      notifyListeners();
+      return false;
+    }
+
+    // Get User ID
+    final userId = await TokenStorage.getUserId();
+    if (userId == null) {
+      _errorMessage = 'Sesi login tidak valid. Silakan login ulang.';
+      _state = AttendanceState.error;
       notifyListeners();
       return false;
     }
@@ -60,11 +72,17 @@ class AttendanceController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    // Add user_id to additional data
+    final data = Map<String, dynamic>.from(additionalData ?? {});
+    data['user_id'] = userId;
+
     try {
       _attendance = await AttendanceService.checkIn(
         method: _selectedMethod!,
         location: location,
-        additionalData: additionalData,
+        additionalData: data,
+        attachment: attachment,
+        filename: filename,
       );
 
       _state = AttendanceState.loaded;

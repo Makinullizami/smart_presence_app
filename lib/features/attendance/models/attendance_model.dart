@@ -18,24 +18,37 @@ class AttendanceModel {
     this.checkInMethod,
     this.checkOutMethod,
     required this.status,
+    this.className,
+    this.sessionName,
   });
 
   factory AttendanceModel.fromJson(Map<String, dynamic> json) {
     return AttendanceModel(
       id: json['id'] as int?,
       userId: json['user_id'] as int,
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.parse(
+        json['created_at'] as String,
+      ), // Backend uses created_at
       checkInTime: json['check_in_time'] != null
           ? DateTime.parse(json['check_in_time'] as String)
           : null,
       checkOutTime: json['check_out_time'] != null
           ? DateTime.parse(json['check_out_time'] as String)
           : null,
-      checkInMethod: json['check_in_method'] as String?,
+      checkInMethod: json['method'] as String?,
       checkOutMethod: json['check_out_method'] as String?,
       status: _parseStatus(json['status'] as String?),
+      className:
+          json['class_session']?['class_room']?['name'] ??
+          json['schedule']?['class_room']?['name'],
+      sessionName: json['class_session'] != null
+          ? 'Pertemuan ${json['class_session']['id']}' // Or use a topic field if available
+          : null,
     );
   }
+
+  final String? className;
+  final String? sessionName;
 
   Map<String, dynamic> toJson() {
     return {
@@ -100,7 +113,8 @@ enum AttendanceStatusEnum {
 enum AttendanceMethod {
   faceRecognition('face_recognition', 'Face Recognition', 'Gunakan wajah Anda'),
   pin('pin', 'PIN', 'Masukkan PIN'),
-  qrCode('qr_code', 'QR Code', 'Scan QR Code');
+  qrCode('qr_code', 'QR Code', 'Scan QR Code'),
+  manual('manual', 'Manual', 'Absensi Manual (Izin/Sakit)');
 
   final String value;
   final String title;

@@ -39,6 +39,11 @@ class AuthService {
       // Save token to SharedPreferences
       await TokenStorage.saveToken(token);
 
+      // Save User ID
+      if (response['user'] != null && response['user']['id'] != null) {
+        await TokenStorage.saveUserId(response['user']['id']);
+      }
+
       // Set token in ApiService for subsequent requests
       ApiService.setToken(token);
 

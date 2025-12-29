@@ -17,6 +17,12 @@ class DashboardApi {
       final classesResponse = await ApiService.get('${ApiUrl.baseUrl}/classes');
       final classes = classesResponse['data'] ?? classesResponse;
 
+      // Fetch attendance statistics
+      final statsResponse = await ApiService.get(
+        '${ApiUrl.baseUrl}/attendance/statistics',
+      );
+      final stats = statsResponse['data'] ?? {};
+
       // Build dashboard data
       final dashboard = {
         'user': user,
@@ -28,7 +34,14 @@ class DashboardApi {
           'lecturers': _extractLecturers(classes),
         },
         'notifications': [], // Empty until notification endpoint is ready
-        'stats': {'present': 0, 'late': 0, 'absent': 0, 'attendance_rate': 0.0},
+        'stats': {
+          'present': stats['present'] ?? 0,
+          'late': stats['late'] ?? 0,
+          'absent': stats['alpha'] ?? 0, // Backend uses 'alpha' for unexcused
+          'permission': stats['permission'] ?? 0,
+          'sick': stats['sick'] ?? 0,
+          'attendance_rate': 0.0,
+        },
       };
 
       return dashboard;

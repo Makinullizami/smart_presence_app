@@ -56,4 +56,37 @@ class TokenStorage {
       return false;
     }
   }
+
+  /// Key for storing user ID in SharedPreferences
+  static const String _userIdKey = 'user_id';
+
+  /// Save user ID to local storage
+  static Future<bool> saveUserId(int userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return await prefs.setInt(_userIdKey, userId);
+    } catch (e) {
+      throw Exception('Failed to save user ID: $e');
+    }
+  }
+
+  /// Get user ID from local storage
+  static Future<int?> getUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_userIdKey);
+    } catch (e) {
+      throw Exception('Failed to get user ID: $e');
+    }
+  }
+
+  /// Clear user ID from local storage
+  static Future<bool> clearUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return await prefs.remove(_userIdKey);
+    } catch (e) {
+      throw Exception('Failed to clear user ID: $e');
+    }
+  }
 }

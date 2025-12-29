@@ -135,10 +135,31 @@ class _ProfilePageState extends State<ProfilePage> {
                             const SizedBox(height: 24),
                           ],
 
-                          // Menu Section
-                          _buildSectionHeader('Pengaturan', Icons.settings),
+                          // Account Section
+                          _buildSectionHeader('Akun', Icons.manage_accounts),
                           const SizedBox(height: 12),
-                          _buildMenuCard(),
+                          _buildAccountCard(),
+                          const SizedBox(height: 24),
+
+                          // Preferences Section
+                          _buildSectionHeader('Preferensi', Icons.tune),
+                          const SizedBox(height: 12),
+                          _buildPreferencesCard(),
+                          const SizedBox(height: 24),
+
+                          // Security Section (Face Data, etc)
+                          _buildSectionHeader(
+                            'Keamanan & Data',
+                            Icons.security,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildSecurityCard(user),
+                          const SizedBox(height: 24),
+
+                          // Support Section
+                          _buildSectionHeader('Lainnya', Icons.info_outline),
+                          const SizedBox(height: 12),
+                          _buildSupportCard(),
                           const SizedBox(height: 80), // Space for bottom nav
                         ],
                       ),
@@ -568,7 +589,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildMenuCard() {
+  bool _biometricEnabled = false;
+  bool _darkMode = false;
+  bool _notificationsEnabled = true;
+
+  Widget _buildAccountCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -598,8 +623,136 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Ganti Password',
             onTap: () => Navigator.pushNamed(context, '/profile/password'),
             iconColor: Colors.orange,
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferencesCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildSwitchItem(
+            icon: Icons.fingerprint,
+            label: 'Login Biometrik',
+            value: _biometricEnabled,
+            onChanged: (val) {
+              setState(() => _biometricEnabled = val);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    val ? 'Biometrik diaktifkan' : 'Biometrik dinonaktifkan',
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            iconColor: Colors.purple,
             showDivider: true,
           ),
+          _buildSwitchItem(
+            icon: Icons.dark_mode_outlined,
+            label: 'Mode Gelap',
+            value: _darkMode,
+            onChanged: (val) {
+              setState(() => _darkMode = val);
+              // Theme logic would go here
+            },
+            iconColor: Colors.indigo,
+            showDivider: true,
+          ),
+          _buildMenuItem(
+            icon: Icons.language,
+            label: 'Bahasa',
+            subtitle: 'Indonesia',
+            onTap: () {},
+            iconColor: Colors.teal,
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityCard(user) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (user.role.toLowerCase() == 'mahasiswa')
+            _buildMenuItem(
+              icon: Icons.face_retouching_natural,
+              label: 'Atur Data Wajah',
+              onTap: () {
+                // Navigate to face registration
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Fitur rekaman wajah ada di menu Absensi'),
+                  ),
+                );
+              },
+              iconColor: Colors.blueAccent,
+              showDivider: true,
+            ),
+          _buildSwitchItem(
+            icon: Icons.notifications_active_outlined,
+            label: 'Notifikasi',
+            value: _notificationsEnabled,
+            onChanged: (val) => setState(() => _notificationsEnabled = val),
+            iconColor: Colors.redAccent,
+            showDivider: true,
+          ),
+          _buildMenuItem(
+            icon: Icons.smartphone,
+            label: 'Perangkat Terhubung',
+            subtitle: 'Samsung Galaxy S23', // Mock data
+            onTap: () {},
+            iconColor: Colors.grey,
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
           _buildMenuItem(
             icon: Icons.help_outline,
             label: 'Bantuan',
@@ -655,6 +808,56 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildSwitchItem({
+    required IconData icon,
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required Color iconColor,
+    required bool showDivider,
+  }) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeColor: Colors.blue.shade700,
+              ),
+            ],
+          ),
+        ),
+        if (showDivider)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 1, color: Colors.grey.shade200),
+          ),
+      ],
+    );
+  }
+
   Widget _buildMenuItem({
     required IconData icon,
     required String label,
@@ -662,6 +865,7 @@ class _ProfilePageState extends State<ProfilePage> {
     required Color iconColor,
     required bool showDivider,
     bool isDestructive = false,
+    String? subtitle,
   }) {
     return Column(
       children: [
@@ -682,13 +886,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: isDestructive ? Colors.red : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: isDestructive ? Colors.red : Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Icon(

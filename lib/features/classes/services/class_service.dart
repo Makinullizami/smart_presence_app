@@ -1,6 +1,7 @@
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_url.dart';
 import '../models/class_model.dart';
+import '../../../core/models/user_model.dart';
 
 /// Class Service - Handles API calls for class management
 class ClassService {
@@ -72,6 +73,7 @@ class ClassService {
       }
 
       // Return empty summary if no data
+      // Return empty summary if no data
       return AttendanceSummaryModel(
         present: 0,
         late: 0,
@@ -80,6 +82,65 @@ class ClassService {
       );
     } catch (e) {
       throw Exception('Gagal memuat ringkasan absensi: ${e.toString()}');
+    }
+  }
+
+  /// Fetch students in a class
+  static Future<List<UserModel>> fetchClassStudents(int classId) async {
+    try {
+      final response = await ApiService.get(
+        '${ApiUrl.baseUrl}/classes/$classId/students',
+      );
+
+      if (response['data'] != null) {
+        final List<dynamic> studentsJson = response['data'];
+        return studentsJson.map((json) => UserModel.fromJson(json)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      throw Exception('Gagal memuat daftar mahasiswa: ${e.toString()}');
+    }
+  }
+
+  /// Start class session
+  static Future<Map<String, dynamic>> startSession(int classId) async {
+    try {
+      final response = await ApiService.post(
+        '${ApiUrl.baseUrl}/classes/$classId/sessions/start',
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Gagal memulai sesi: ${e.toString()}');
+    }
+  }
+
+  /// Stop class session
+  static Future<Map<String, dynamic>> stopSession(int classId) async {
+    try {
+      final response = await ApiService.post(
+        '${ApiUrl.baseUrl}/classes/$classId/sessions/stop',
+      );
+      return response;
+    } catch (e) {
+      throw Exception('Gagal menghentikan sesi: ${e.toString()}');
+    }
+  }
+
+  /// Get active session
+  static Future<Map<String, dynamic>?> getActiveSession(int classId) async {
+    try {
+      final response = await ApiService.get(
+        '${ApiUrl.baseUrl}/classes/$classId/active-session',
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        return response['data'];
+      }
+      return null;
+    } catch (e) {
+      // Return null instead of throwing if just checking status
+      return null;
     }
   }
 }

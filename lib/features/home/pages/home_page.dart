@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../classes/services/student_class_service.dart';
+import '../delegates/class_search_delegate.dart';
 import '../controllers/home_controller.dart';
 import '../models/dashboard_model.dart';
 
@@ -129,11 +131,28 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: () async {
+            try {
+              final classes = await StudentClassService.getClasses();
+              if (!context.mounted) return;
+              showSearch(
+                context: context,
+                delegate: ClassSearchDelegate(classes),
+              );
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal memuat pencarian: $e')),
+                );
+              }
+            }
+          },
           icon: const Icon(Icons.search, color: Color(0xFF64748B)),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, '/notifications');
+          },
           icon: const Icon(
             Icons.notifications_outlined,
             color: Color(0xFF64748B),
@@ -343,7 +362,7 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.school_outlined,
                 label: 'Kelas Saya',
                 color: Colors.blue.shade600,
-                onTap: () => Navigator.pushNamed(context, '/classes'),
+                onTap: () => Navigator.pushNamed(context, '/student/classes'),
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
@@ -528,10 +547,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildStatisticsCard(dynamic stats) {
-    final present = stats.present ?? 0;
-    final late = stats.late ?? 0;
-    final absent = stats.absent ?? 0;
+  Widget _buildStatisticsCard(AttendanceStats stats) {
+    final present = stats.present;
+    final late = stats.late;
+    final absent = stats.absent;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -560,24 +579,37 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              _buildStatItem(
-                'Hadir',
-                present.toString(),
-                Colors.green.shade600,
-              ),
-              _buildStatItem(
-                'Terlambat',
-                late.toString(),
-                Colors.orange.shade600,
-              ),
-              _buildStatItem(
-                'Tidak Hadir',
-                absent.toString(),
-                Colors.red.shade600,
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildStatItem(
+                  'Hadir',
+                  present.toString(),
+                  Colors.green.shade600,
+                ),
+                const SizedBox(width: 16),
+                _buildStatItem(
+                  'Terlambat',
+                  late.toString(),
+                  Colors.orange.shade600,
+                ),
+                const SizedBox(width: 16),
+                _buildStatItem(
+                  'Izin',
+                  stats.permission.toString(),
+                  Colors.blue.shade600,
+                ),
+                const SizedBox(width: 16),
+                _buildStatItem(
+                  'Sakit',
+                  stats.sick.toString(),
+                  Colors.purple.shade600,
+                ),
+                const SizedBox(width: 16),
+                _buildStatItem('Alpha', absent.toString(), Colors.red.shade600),
+              ],
+            ),
           ),
         ],
       ),
@@ -585,13 +617,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStatItem(String label, String value, Color color) {
-    return Expanded(
+    return Container(
+      width: 80,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -599,7 +637,11 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../features/profile/controllers/profile_controller.dart';
 import '../../features/home/pages/home_page.dart';
 import '../../features/classes/pages/class_list_page.dart';
 import '../../features/attendance/pages/attendance_page.dart';
 import '../../features/profile/pages/profile_page.dart';
+import '../../features/lecturer/pages/lecturer_home_page.dart';
+import '../../features/lecturer/pages/lecturer_stats_page.dart';
+import '../../features/lecturer/pages/lecturer_report_page.dart';
 
 /// Main Scaffold with persistent bottom navigation
 class MainScaffold extends StatefulWidget {
@@ -21,37 +26,110 @@ class _MainScaffoldState extends State<MainScaffold> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-  }
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    const ClassListPage(),
-    const AttendancePage(),
-    const ProfilePage(),
-  ];
+    // Load user profile when app starts (if not already loaded)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileController = Provider.of<ProfileController>(
+        context,
+        listen: false,
+      );
+      if (profileController.user == null &&
+          profileController.state != ProfileState.loading) {
+        profileController.loadProfile();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
 
-    return PopScope(
-      canPop: _currentIndex == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _currentIndex != 0) {
-          setState(() {
-            _currentIndex = 0;
-          });
-        }
+    return Consumer<ProfileController>(
+      builder: (context, profileController, _) {
+        final user = profileController.user;
+        final role = user?.role.toLowerCase() ?? '';
+        final isLecturer = role == 'dosen' || role == 'lecturer';
+
+        final List<Widget> pages = isLecturer
+            ? [
+                const LecturerHomePage(),
+                const LecturerStatsPage(),
+                const LecturerReportPage(),
+                const ProfilePage(),
+              ]
+            : [
+                const HomePage(),
+                const ClassListPage(),
+                const AttendancePage(),
+                const ProfilePage(),
+              ];
+
+        final List<Map<String, dynamic>> navItems = isLecturer
+            ? [
+                {
+                  'icon': Icons.home_outlined,
+                  'active': Icons.home,
+                  'label': 'Beranda',
+                },
+                {
+                  'icon': Icons.insert_chart_outlined,
+                  'active': Icons.bar_chart,
+                  'label': 'Statistik',
+                },
+                {
+                  'icon': Icons.assignment_outlined,
+                  'active': Icons.assignment,
+                  'label': 'Laporan',
+                },
+                {
+                  'icon': Icons.person_outline,
+                  'active': Icons.person,
+                  'label': 'Profil',
+                },
+              ]
+            : [
+                {
+                  'icon': Icons.home_outlined,
+                  'active': Icons.home,
+                  'label': 'Beranda',
+                },
+                {
+                  'icon': Icons.class_outlined,
+                  'active': Icons.class_,
+                  'label': 'Kelas',
+                },
+                {
+                  'icon': Icons.fingerprint_outlined,
+                  'active': Icons.fingerprint,
+                  'label': 'Absensi',
+                },
+                {
+                  'icon': Icons.person_outline,
+                  'active': Icons.person,
+                  'label': 'Profil',
+                },
+              ];
+
+        return PopScope(
+          canPop: _currentIndex == 0,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && _currentIndex != 0) {
+              setState(() {
+                _currentIndex = 0;
+              });
+            }
+          },
+          child: Scaffold(
+            body: IndexedStack(index: _currentIndex, children: pages),
+            bottomNavigationBar: _buildBottomNav(isTablet, navItems),
+          ),
+        );
       },
-      child: Scaffold(
-        body: IndexedStack(index: _currentIndex, children: _pages),
-        bottomNavigationBar: _buildBottomNav(isTablet),
-      ),
     );
   }
 
-  Widget _buildBottomNav(bool isTablet) {
+  Widget _buildBottomNav(bool isTablet, List<Map<String, dynamic>> navItems) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -71,36 +149,16 @@ class _MainScaffoldState extends State<MainScaffold> {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home,
-                label: 'Home',
-                index: 0,
+            children: List.generate(navItems.length, (index) {
+              final item = navItems[index];
+              return _buildNavItem(
+                icon: item['icon'] as IconData,
+                activeIcon: item['active'] as IconData,
+                label: item['label'] as String,
+                index: index,
                 isTablet: isTablet,
-              ),
-              _buildNavItem(
-                icon: Icons.class_outlined,
-                activeIcon: Icons.class_,
-                label: 'Kelas',
-                index: 1,
-                isTablet: isTablet,
-              ),
-              _buildNavItem(
-                icon: Icons.fingerprint_outlined,
-                activeIcon: Icons.fingerprint,
-                label: 'Absensi',
-                index: 2,
-                isTablet: isTablet,
-              ),
-              _buildNavItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: 'Profil',
-                index: 3,
-                isTablet: isTablet,
-              ),
-            ],
+              );
+            }),
           ),
         ),
       ),

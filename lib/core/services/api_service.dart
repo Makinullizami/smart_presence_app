@@ -95,6 +95,73 @@ class ApiService {
     }
   }
 
+  /// Perform Multipart POST request
+  static Future<Map<String, dynamic>> postMultipart(
+    String url, {
+    required Map<String, String> fields,
+    required String fileField,
+    required dynamic
+    file, // File (dart:io), String (path), or List<int> (bytes)
+    String? filename, // Required if file is List<int>
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+
+      // Add headers
+      final authHeaders = _buildHeaders(additionalHeaders: headers);
+      if (authHeaders.containsKey('Content-Type')) {
+        authHeaders.remove('Content-Type'); // Let MultipartRequest handle it
+      }
+      request.headers.addAll(authHeaders);
+
+      // Add fields
+      fields.forEach((key, value) {
+        request.fields[key] = value;
+      });
+
+      // Add file
+      if (file != null) {
+        http.MultipartFile multipartFile;
+
+        if (file is List<int>) {
+          // Handle bytes (Web or Memory)
+          multipartFile = http.MultipartFile.fromBytes(
+            fileField,
+            file,
+            filename: filename ?? 'upload.jpg',
+          );
+        } else if (file is String) {
+          // Handle path string
+          multipartFile = await http.MultipartFile.fromPath(fileField, file);
+        } else {
+          // Handle File object (dynamic check for dart:io File)
+          // We use dynamic to avoid importing dart:io directly if possible in core,
+          // but since we can't easily check 'is File' without import, assume it has .path
+          // For Web safety, we should really be passing bytes or XFile from the UI layer.
+          // However, to fix the immediate crash:
+          try {
+            // Try assuming it's a File object with a path property
+            final path = (file as dynamic).path;
+            multipartFile = await http.MultipartFile.fromPath(fileField, path);
+          } catch (_) {
+            // Fallback or error if not file-like
+            throw Exception('Unsupported file format for upload');
+          }
+        }
+
+        request.files.add(multipartFile);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Multipart POST request failed: $e');
+    }
+  }
+
   /// Perform PUT request
   ///
   /// [url] - The endpoint URL
@@ -118,6 +185,29 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       throw Exception('PUT request failed: $e');
+    }
+  }
+
+  /// Perform DELETE request
+  ///
+  /// [url] - The endpoint URL
+  /// [headers] - Optional additional headers
+  ///
+  /// Returns the response body as a Map
+  /// Throws an exception if the request fails
+  static Future<Map<String, dynamic>> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: _buildHeaders(additionalHeaders: headers),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('DELETE request failed: $e');
     }
   }
 

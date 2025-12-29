@@ -30,27 +30,56 @@ class AttendanceService {
     required AttendanceMethod method,
     String? location,
     Map<String, dynamic>? additionalData,
+    dynamic attachment, // File or String path
+    String? filename,
   }) async {
     try {
-      final body = <String, dynamic>{
-        'method': method.value,
-        if (location != null) 'location': location,
-        if (additionalData != null) ...additionalData,
-      };
+      if (attachment != null) {
+        // Use Multipart Request
+        final fields = <String, String>{
+          'method': method.value,
+          if (location != null) 'location': location,
+        };
 
-      final response = await ApiService.post(
-        '${ApiUrl.baseUrl}/attendance/check-in',
-        body: body,
-      );
+        if (additionalData != null) {
+          additionalData.forEach((key, value) {
+            fields[key] = value.toString();
+          });
+        }
 
-      return AttendanceModel.fromJson(
-        response['attendance'] as Map<String, dynamic>,
-      );
+        final response = await ApiService.postMultipart(
+          '${ApiUrl.baseUrl}/attendance/check-in',
+          fields: fields,
+          fileField: 'attachment',
+          file: attachment,
+          filename: filename,
+        );
+
+        return AttendanceModel.fromJson(
+          response['data'] as Map<String, dynamic>,
+        );
+      } else {
+        // Use Standard JSON Request
+        final body = <String, dynamic>{
+          'method': method.value,
+          if (location != null) 'location': location,
+          if (additionalData != null) ...additionalData,
+        };
+
+        final response = await ApiService.post(
+          '${ApiUrl.baseUrl}/attendance/check-in',
+          body: body,
+        );
+
+        return AttendanceModel.fromJson(
+          response['data'] as Map<String, dynamic>,
+        );
+      }
     } catch (e) {
       // Handle specific errors
       final errorMessage = e.toString();
 
-      if (errorMessage.contains('already checked in')) {
+      if (errorMessage.toLowerCase().contains('already checked in')) {
         throw Exception('Anda sudah melakukan check-in hari ini');
       } else if (errorMessage.contains('401')) {
         throw Exception('Sesi Anda telah berakhir. Silakan login kembali.');
@@ -124,7 +153,7 @@ class AttendanceService {
 
       final response = await ApiService.get(url);
 
-      final List<dynamic> attendances = response['attendances'] as List;
+      final List<dynamic> attendances = response['data'] as List;
       return attendances
           .map((json) => AttendanceModel.fromJson(json as Map<String, dynamic>))
           .toList();

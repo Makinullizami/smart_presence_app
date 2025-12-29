@@ -101,7 +101,11 @@ class LecturerClassModel {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       code: json['code'] ?? '',
-      studentCount: json['student_count'] ?? json['studentCount'] ?? 0,
+      studentCount:
+          json['students_count'] ??
+          json['student_count'] ??
+          json['studentCount'] ??
+          0,
       hasActiveSession:
           json['has_active_session'] ?? json['hasActiveSession'] ?? false,
       activeSessionId: json['active_session_id'] ?? json['activeSessionId'],

@@ -1,3 +1,11 @@
+/// Helper to safely parse integers
+int _parseInt(dynamic value) {
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value) ?? 0;
+  if (value is double) return value.toInt();
+  return 0;
+}
+
 /// Dashboard Model
 /// Contains all data needed for the home dashboard
 class DashboardModel {
@@ -50,7 +58,7 @@ class UserInfo {
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
-      id: json['id'] ?? 0,
+      id: _parseInt(json['id']),
       name: json['name'] ?? 'Unknown',
       email: json['email'] ?? '',
       role: json['role'] ?? 'student',
@@ -116,8 +124,8 @@ class ClassSummary {
 
   factory ClassSummary.fromJson(Map<String, dynamic> json) {
     return ClassSummary(
-      totalClasses: json['total_classes'] ?? 0,
-      todayClasses: json['today_classes'] ?? 0,
+      totalClasses: _parseInt(json['total_classes']),
+      todayClasses: _parseInt(json['today_classes']),
       lecturers: (json['lecturers'] as List?)?.cast<String>() ?? [],
     );
   }
@@ -141,7 +149,7 @@ class NotificationItem {
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
-      id: json['id'] ?? 0,
+      id: _parseInt(json['id']),
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       time: json['time'] ?? '',
@@ -154,24 +162,38 @@ class NotificationItem {
 class AttendanceStats {
   final int present;
   final int late;
-  final int absent;
+  final int absent; // alpha
+  final int permission;
+  final int sick;
   final double attendanceRate;
 
   AttendanceStats({
     required this.present,
     required this.late,
     required this.absent,
+    required this.permission,
+    required this.sick,
     required this.attendanceRate,
   });
 
   factory AttendanceStats.fromJson(Map<String, dynamic> json) {
+    int parse(dynamic val) {
+      if (val is int) return val;
+      if (val is String) return int.tryParse(val) ?? 0;
+      return 0;
+    }
+
     return AttendanceStats(
-      present: json['present'] ?? 0,
-      late: json['late'] ?? 0,
-      absent: json['absent'] ?? 0,
-      attendanceRate: (json['attendance_rate'] ?? 0).toDouble(),
+      present: parse(json['present']),
+      late: parse(json['late']),
+      absent: parse(json['absent']),
+      permission: parse(json['permission']),
+      sick: parse(json['sick']),
+      attendanceRate: (json['attendance_rate'] is num)
+          ? (json['attendance_rate'] as num).toDouble()
+          : 0.0,
     );
   }
 
-  int get total => present + late + absent;
+  int get total => present + late + absent + permission + sick;
 }

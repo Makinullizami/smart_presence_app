@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../controllers/lecturer_home_controller.dart';
 import '../models/lecturer_dashboard_model.dart';
+import '../widgets/lecturer_class_card.dart';
+import '../services/lecturer_class_service.dart';
 
 /// Modern Lecturer Home Page - Redesigned Dashboard
 class LecturerHomePage extends StatefulWidget {
@@ -283,7 +285,16 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/lecturer/attendance/monitor',
+                        arguments: {
+                          'sessionId': activeClass.activeSessionId ?? 0,
+                          'className': activeClass.name,
+                        },
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green.shade700,
@@ -346,21 +357,21 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
                 icon: Icons.school_outlined,
                 label: 'Kelas Saya',
                 color: Colors.blue.shade600,
-                onTap: () {},
+                onTap: () => Navigator.pushNamed(context, '/lecturer/classes'),
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
                 icon: Icons.assessment_outlined,
                 label: 'Laporan',
                 color: Colors.purple.shade600,
-                onTap: () {},
+                onTap: () => Navigator.pushNamed(context, '/lecturer/reports'),
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
                 icon: Icons.bar_chart,
                 label: 'Statistik',
                 color: Colors.green.shade600,
-                onTap: () {},
+                onTap: () => Navigator.pushNamed(context, '/lecturer/stats'),
               ),
               const SizedBox(width: 12),
               _buildQuickAccessItem(
@@ -439,7 +450,9 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/lecturer/classes');
+                },
                 child: Text(
                   'Lihat Semua',
                   style: TextStyle(
@@ -457,7 +470,57 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
             ...controller.classes.take(3).map((classModel) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _buildClassCard(classModel),
+                child: LecturerClassCard(
+                  classModel: classModel,
+                  onTapDetail: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/lecturer/class/detail',
+                      arguments: classModel.id,
+                    );
+                  },
+                  onTapSession: () async {
+                    if (classModel.hasActiveSession) {
+                      // Stop session with confirmation
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Tutup Sesi'),
+                          content: const Text(
+                            'Apakah Anda yakin ingin menutup sesi absensi?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Batal'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text('Tutup'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        // We need a way to stop session via controller or service
+                        // LecturerClassListPage used _handleStopSession.
+                        // LecturerHomeController doesn't have this method yet probably.
+                        // But we can use LecturerClassService directly or add to controller.
+                        // Let's use service directly for now or see if controller has it.
+                        // Checking controller later. For now assume passing this logic.
+                        await _handleStopSession(classModel.id);
+                      }
+                    } else {
+                      // Start session
+                      await _handleStartSession(classModel.id);
+                    }
+                  },
+                  // onDelete: null, // No delete on Home Page
+                ),
               );
             }),
         ],
@@ -465,166 +528,52 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
     );
   }
 
-  Widget _buildClassCard(LecturerClassModel classModel) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+  Future<void> _handleStartSession(int classId) async {
+    try {
+      await LecturerClassService.startSession(classId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesi absensi dimulai'),
+            backgroundColor: Colors.green,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.class_outlined,
-                  color: Colors.blue.shade700,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      classModel.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.shade50,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            classModel.code,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.purple.shade700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.people,
-                          size: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${classModel.studentCount} Mahasiswa',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: classModel.hasActiveSession
-                      ? Colors.green.shade50
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  classModel.hasActiveSession ? 'Aktif' : 'Nonaktif',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: classModel.hasActiveSession
-                        ? Colors.green.shade700
-                        : Colors.grey.shade600,
-                  ),
-                ),
-              ),
-            ],
+        );
+        _onRefresh();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue.shade700,
-                    side: BorderSide(color: Colors.blue.shade700),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Detail',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: classModel.hasActiveSession
-                        ? Colors.red.shade600
-                        : Colors.blue.shade700,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    classModel.hasActiveSession ? 'Tutup Sesi' : 'Buka Sesi',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        );
+      }
+    }
+  }
+
+  Future<void> _handleStopSession(int classId) async {
+    try {
+      await LecturerClassService.stopSession(classId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesi absensi ditutup'),
+            backgroundColor: Colors.green,
           ),
-        ],
-      ),
-    );
+        );
+        _onRefresh();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildStatisticsCard(AttendanceStatsModel stats) {

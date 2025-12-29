@@ -60,6 +60,40 @@ class AttendanceStatusCard extends StatelessWidget {
           ),
           SizedBox(height: isTablet ? 24.0 : 20.0),
 
+          // Class Info (Added)
+          if (attendance?.className != null) ...[
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(isTablet ? 12.0 : 8.0),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    attendance!.className!,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: isTablet ? 18.0 : 16.0,
+                    ),
+                  ),
+                  if (attendance!.sessionName != null)
+                    Text(
+                      attendance!.sessionName!,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: isTablet ? 14.0 : 12.0,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: isTablet ? 16.0 : 12.0),
+          ],
+
           // Status
           Text(
             attendance?.statusDisplay ?? 'Belum Absen',

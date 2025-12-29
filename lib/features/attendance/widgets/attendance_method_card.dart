@@ -158,6 +158,8 @@ class _AttendanceMethodCardState extends State<AttendanceMethodCard>
         return Icons.pin;
       case AttendanceMethod.qrCode:
         return Icons.qr_code_scanner;
+      case AttendanceMethod.manual:
+        return Icons.note_alt_outlined;
     }
   }
 
@@ -169,6 +171,8 @@ class _AttendanceMethodCardState extends State<AttendanceMethodCard>
         return Colors.purple;
       case AttendanceMethod.qrCode:
         return Colors.green;
+      case AttendanceMethod.manual:
+        return Colors.orange;
     }
   }
 }

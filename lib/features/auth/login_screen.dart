@@ -63,18 +63,13 @@ class _LoginScreenState extends State<LoginScreen> {
         print('DEBUG - User Role: $role');
 
         // Check if role is lecturer/dosen (case-insensitive)
+        // Check if role is lecturer/dosen (case-insensitive)
         final roleLower = role.toLowerCase();
-        if (roleLower == 'lecturer' ||
-            roleLower == 'dosen' ||
-            roleLower == 'teacher') {
-          // Navigate to lecturer dashboard
-          print('DEBUG - Navigating to lecturer dashboard');
-          Navigator.pushReplacementNamed(context, '/lecturer/home');
-        } else {
-          // Navigate to student home
-          print('DEBUG - Navigating to student dashboard');
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        print('DEBUG - User Role Lower: $roleLower');
+
+        // Always navigate to MainScaffold (/home) which now handles role-based UI
+        print('DEBUG - Navigating to main dashboard');
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       // Login failed - show error message
