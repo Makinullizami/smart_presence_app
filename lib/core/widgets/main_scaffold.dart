@@ -27,16 +27,14 @@ class _MainScaffoldState extends State<MainScaffold> {
     super.initState();
     _currentIndex = widget.initialIndex;
 
-    // Load user profile when app starts (if not already loaded)
+    // Always load user profile to ensure we have the latest role data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final profileController = Provider.of<ProfileController>(
         context,
         listen: false,
       );
-      if (profileController.user == null &&
-          profileController.state != ProfileState.loading) {
-        profileController.loadProfile();
-      }
+      // Force reload to get fresh user data including role
+      profileController.loadProfile();
     });
   }
 
@@ -50,6 +48,19 @@ class _MainScaffoldState extends State<MainScaffold> {
         final user = profileController.user;
         final role = user?.role.toLowerCase() ?? '';
         final isLecturer = role == 'dosen' || role == 'lecturer';
+
+        // Debug logging
+        print('DEBUG MainScaffold - User: ${user?.name}');
+        print('DEBUG MainScaffold - Role: $role');
+        print('DEBUG MainScaffold - isLecturer: $isLecturer');
+        print('DEBUG MainScaffold - ProfileState: ${profileController.state}');
+
+        // Show loading while profile is being fetched
+        if (profileController.state == ProfileState.loading || user == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
         final List<Widget> pages = isLecturer
             ? [
