@@ -77,7 +77,7 @@ class _AttendanceMethodCardState extends State<AttendanceMethodCard>
         scale: _scaleAnimation,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.all(isTablet ? 24.0 : 20.0),
+          padding: EdgeInsets.all(isTablet ? 16.0 : 8.0),
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? color.withValues(alpha: 0.15)
@@ -104,24 +104,24 @@ class _AttendanceMethodCardState extends State<AttendanceMethodCard>
               children: [
                 // Icon
                 Container(
-                  padding: EdgeInsets.all(isTablet ? 20.0 : 16.0),
+                  padding: EdgeInsets.all(isTablet ? 12.0 : 8.0),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _getMethodIcon(),
-                    size: isTablet ? 48.0 : 40.0,
+                    size: isTablet ? 32.0 : 24.0,
                     color: color,
                   ),
                 ),
-                SizedBox(height: isTablet ? 16.0 : 12.0),
+                SizedBox(height: isTablet ? 10.0 : 6.0),
 
                 // Title
                 Text(
                   widget.method.title,
                   style: TextStyle(
-                    fontSize: isTablet ? 18.0 : 16.0,
+                    fontSize: isTablet ? 14.0 : 11.0,
                     fontWeight: FontWeight.bold,
                     color: widget.isSelected ? color : Colors.grey.shade800,
                   ),
@@ -129,13 +129,13 @@ class _AttendanceMethodCardState extends State<AttendanceMethodCard>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: isTablet ? 6.0 : 4.0),
+                SizedBox(height: isTablet ? 4.0 : 2.0),
 
                 // Subtitle
                 Text(
                   widget.method.subtitle,
                   style: TextStyle(
-                    fontSize: isTablet ? 13.0 : 12.0,
+                    fontSize: isTablet ? 11.0 : 9.0,
                     color: Colors.grey.shade600,
                   ),
                   textAlign: TextAlign.center,

@@ -4,5 +4,7 @@ class ApiUrl {
   ApiUrl._();
 
   /// Base URL for the API
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  /// Use your computer's local IP address when testing on physical device
+  /// Find your IP: Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
+  static const String baseUrl = 'http://192.168.100.250:8000/api';
 }

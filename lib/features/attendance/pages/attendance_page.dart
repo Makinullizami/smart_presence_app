@@ -63,24 +63,24 @@ class _AttendancePageState extends State<AttendancePage> {
               onRefresh: controller.refresh,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(isTablet ? 32.0 : 20.0),
+                padding: EdgeInsets.all(isTablet ? 20.0 : 8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Status Card
                     AttendanceStatusCard(attendance: controller.attendance),
-                    SizedBox(height: isTablet ? 40.0 : 32.0),
+                    SizedBox(height: isTablet ? 20.0 : 8.0),
 
                     // Section Title
                     Text(
                       'Pilih Metode Absensi',
                       style: TextStyle(
-                        fontSize: isTablet ? 20.0 : 18.0,
+                        fontSize: isTablet ? 18.0 : 14.0,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey.shade800,
                       ),
                     ),
-                    SizedBox(height: isTablet ? 20.0 : 16.0),
+                    SizedBox(height: isTablet ? 12.0 : 6.0),
 
                     // Method Cards - Responsive Grid
                     LayoutBuilder(
@@ -89,9 +89,9 @@ class _AttendancePageState extends State<AttendancePage> {
                           crossAxisCount: crossAxisCount,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: isTablet ? 16.0 : 12.0,
-                          crossAxisSpacing: isTablet ? 16.0 : 12.0,
-                          childAspectRatio: isTablet ? 0.9 : 0.85,
+                          mainAxisSpacing: isTablet ? 10.0 : 6.0,
+                          crossAxisSpacing: isTablet ? 10.0 : 6.0,
+                          childAspectRatio: isTablet ? 1.0 : 1.2,
                           children: [
                             AttendanceMethodCard(
                               method: AttendanceMethod.faceRecognition,
@@ -101,9 +101,11 @@ class _AttendancePageState extends State<AttendancePage> {
                               enabled: !controller.isCompleted,
                               onTap: () {
                                 if (!controller.isCompleted) {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/attendance/face',
+                                  Future.microtask(
+                                    () => Navigator.pushNamed(
+                                      context,
+                                      '/attendance/face',
+                                    ),
                                   );
                                 }
                               },
@@ -116,9 +118,11 @@ class _AttendancePageState extends State<AttendancePage> {
                               enabled: !controller.isCompleted,
                               onTap: () {
                                 if (!controller.isCompleted) {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/attendance/pin',
+                                  Future.microtask(
+                                    () => Navigator.pushNamed(
+                                      context,
+                                      '/attendance/pin',
+                                    ),
                                   );
                                 }
                               },
@@ -131,9 +135,11 @@ class _AttendancePageState extends State<AttendancePage> {
                               enabled: !controller.isCompleted,
                               onTap: () {
                                 if (!controller.isCompleted) {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/attendance/qr',
+                                  Future.microtask(
+                                    () => Navigator.pushNamed(
+                                      context,
+                                      '/attendance/qr',
+                                    ),
                                   );
                                 }
                               },
@@ -142,23 +148,27 @@ class _AttendancePageState extends State<AttendancePage> {
                         );
                       },
                     ),
-                    SizedBox(height: isTablet ? 40.0 : 32.0),
+                    SizedBox(height: isTablet ? 16.0 : 8.0),
 
                     // History Button
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/attendance/history'),
-                        icon: Icon(Icons.history, size: isTablet ? 22.0 : 20.0),
+                        onPressed: () => Future.microtask(
+                          () => Navigator.pushNamed(
+                            context,
+                            '/attendance/history',
+                          ),
+                        ),
+                        icon: Icon(Icons.history, size: isTablet ? 20.0 : 16.0),
                         label: Text(
                           'Lihat Riwayat Absensi',
-                          style: TextStyle(fontSize: isTablet ? 16.0 : 14.0),
+                          style: TextStyle(fontSize: isTablet ? 14.0 : 12.0),
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 32.0 : 24.0,
-                            vertical: isTablet ? 20.0 : 16.0,
+                            horizontal: isTablet ? 20.0 : 12.0,
+                            vertical: isTablet ? 12.0 : 8.0,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
